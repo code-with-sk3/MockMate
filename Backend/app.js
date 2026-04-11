@@ -1,10 +1,14 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const authRoutes = require("./routes/auth");
+const resumeRoutes = require("./routes/resume");
 
 const app = express();
 
 // middleware (to read JSON data)
 app.use(express.json());
+app.use("/auth", authRoutes);
+app.use("/resume", resumeRoutes);
 
 // test route
 app.get("/", (req, res) => {
