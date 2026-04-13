@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth");
 const resumeRoutes = require("./routes/resume");
+const interviewRoutes = require("./routes/interview");
 
 const app = express();
 
@@ -9,6 +10,7 @@ const app = express();
 app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/resume", resumeRoutes);
+app.use("/interview", interviewRoutes);
 
 // test route
 app.get("/", (req, res) => {

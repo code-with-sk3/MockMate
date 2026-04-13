@@ -36,4 +36,19 @@ router.get("/all", async (req, res) => {
     }
 });
 
+router.get("/:id", async (req, res) => {
+    try {
+        const resume = await Resume.findById(req.params.id);
+
+        if (!resume) {
+            return res.send("Resume not found");
+        }
+
+        res.json(resume);
+    } catch (err) {
+        console.log(err);
+        res.send("Error fetching resume");
+    }
+});
+
 module.exports = router;
