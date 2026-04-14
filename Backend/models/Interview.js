@@ -5,7 +5,14 @@ const interviewSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Resume"
     },
-    questions: [String]
+    questions: [String],
+    answers: [String],
+    feedback: {
+        score: Number,
+        strengths: [String],
+        weaknesses: [String],
+        suggestions: [String]
+    }
 });
 
 module.exports = mongoose.model("Interview", interviewSchema);
