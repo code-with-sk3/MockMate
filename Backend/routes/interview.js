@@ -1,3 +1,9 @@
+const OpenAI = require("openai");
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
+
 const express = require("express");
 const router = express.Router();
 
@@ -9,38 +15,69 @@ router.post("/questions/:id", async (req, res) => {
         const resume = await Resume.findById(req.params.id);
 
         if (!resume) {
-            return res.send("Resume not found");
+            return res.status(404).json({
+                message: "Resume not found"
+            });
         }
 
-        const text = resume.extractedText.toLowerCase();
+        const prompt = `
+You are an interview question generator.
 
-        let questions = [];
+Read the following resume text and generate 5 interview questions.
 
-        if (text.includes("react")) {
-            questions.push("What is React?");
-            questions.push("What are React hooks?");
-        }
+Rules:
+- Questions should be clear and simple
+- Questions should be based on skills, projects, and technologies in the resume
+- Return only valid JSON
+- Format:
+{
+  "questions": [
+    "Question 1",
+    "Question 2",
+    "Question 3",
+    "Question 4",
+    "Question 5"
+  ]
+}
 
-        if (text.includes("node")) {
-            questions.push("What is Node.js?");
-            questions.push("What is Express?");
-        }
+Resume text:
+${resume.extractedText}
+`;
 
-        if (text.includes("mongodb")) {
-            questions.push("What is MongoDB?");
-            questions.push("What is Mongoose?");
-        }
+        const response = await openai.chat.completions.create({
+            model: "gpt-4.1-mini",
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ]
+        });
 
-        if (questions.length === 0) {
-            questions.push("Tell me about yourself.");
-            questions.push("Explain your projects.");
+        const aiText = response.choices[0].message.content;
+
+        let parsedData;
+
+        try {
+            parsedData = JSON.parse(aiText);
+        } catch (err) {
+            return res.status(500).json({
+                message: "AI returned invalid JSON",
+                raw: aiText
+            });
         }
 
         const newInterview = new Interview({
             resumeId: resume._id,
-            questions: questions,
-            answers: []
-       });
+            questions: parsedData.questions || [],
+            answers: [],
+            feedback: {
+                score: 0,
+                strengths: [],
+                weaknesses: [],
+                suggestions: []
+            }
+        });
 
         await newInterview.save();
 
@@ -48,7 +85,9 @@ router.post("/questions/:id", async (req, res) => {
 
     } catch (err) {
         console.log(err);
-        res.send("Error generating questions");
+        res.status(500).json({
+            message: "Error generating AI questions"
+        });
     }
 });
 
@@ -57,13 +96,34 @@ router.get("/:id", async (req, res) => {
         const interview = await Interview.findById(req.params.id);
 
         if (!interview) {
-            return res.send("Interview not found");
+            return res.status(404).json({
+                message: "Interview not found"
+            });
         }
 
-        res.json(interview);
+        const response = {
+            interviewId: interview._id,
+            resumeId: interview.resumeId,
+            questions: interview.questions || [],
+            answers: interview.answers || [],
+            feedback: interview.feedback || {
+                score: 0,
+                strengths: [],
+                weaknesses: [],
+                suggestions: []
+            }
+        };
+
+        res.json({
+            success: true,
+            data: response
+        });
+
     } catch (err) {
         console.log(err);
-        res.send("Error fetching interview");
+        res.status(500).json({
+            message: "Error fetching interview"
+        });
     }
 });
 
@@ -96,59 +156,61 @@ router.post("/feedback/:id", async (req, res) => {
             return res.send("Interview not found");
         }
 
-        const answers = interview.answers;
+        const qaText = interview.questions.map((q, i) => {
+            return `Question ${i + 1}: ${q}\nAnswer ${i + 1}: ${interview.answers[i] || "No answer provided"}`;
+        }).join("\n\n");
 
-        let score = 0;
-        let strengths = [];
-        let weaknesses = [];
-        let suggestions = [];
+        const prompt = `
+You are an interview evaluator.
 
-        if (answers.length === 0) {
-            score = 0;
-            weaknesses.push("No answers were submitted");
-            suggestions.push("Please answer the interview questions");
-        } else {
-            let totalLength = 0;
+Analyze these interview questions and answers.
 
-            for (let answer of answers) {
-                totalLength += answer.length;
-            }
+Return feedback in valid JSON format like this:
+{
+  "score": 0,
+  "strengths": [],
+  "weaknesses": [],
+  "suggestions": []
+}
 
-            let averageLength = totalLength / answers.length;
+Interview data:
+${qaText}
+`;
 
-            if (averageLength > 80) {
-                score = 8;
-                strengths.push("Answers are detailed");
-                strengths.push("Good effort in explaining concepts");
-                suggestions.push("Add real project examples to make answers stronger");
-            } else if (averageLength > 30) {
-                score = 6;
-                strengths.push("Answers are okay");
-                weaknesses.push("Some answers are too short");
-                suggestions.push("Try to explain answers in more detail");
-            } else {
-                score = 4;
-                weaknesses.push("Answers are very short");
-                weaknesses.push("Concept explanation is weak");
-                suggestions.push("Practice explaining concepts clearly");
-                suggestions.push("Try to answer with examples");
-            }
+        const response = await openai.chat.completions.create({
+            model: "gpt-4.1-mini",
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ]
+        });
+
+        const aiText = response.choices[0].message.content;
+
+        let parsedFeedback;
+
+        try {
+            parsedFeedback = JSON.parse(aiText);
+        } catch (err) {
+            return res.status(500).json({
+                message: "AI returned invalid JSON",
+                raw: aiText
+            });
         }
 
-        interview.feedback = {
-            score,
-            strengths,
-            weaknesses,
-            suggestions
-        };
-
+        interview.feedback = parsedFeedback;
         await interview.save();
 
-        res.json(interview.feedback);
+        res.json({
+            message: "Feedback generated successfully",
+            feedback: parsedFeedback
+        });
 
     } catch (err) {
         console.log(err);
-        res.send("Error generating feedback");
+        res.status(500).send("Error generating AI feedback");
     }
 });
 
