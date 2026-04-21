@@ -11,7 +11,7 @@ router.post("/signup", async (req, res) => {
             return res.send("Please enter all fields");
         }
 
-        oldUser = await User.findOne({ email: email });
+        const oldUser = await User.findOne({ email: email });
 
         if (oldUser) {
             return res.send("User already exists");
