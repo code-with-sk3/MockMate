@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
 
 function Signup() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,6 +27,9 @@ function Signup() {
       );
 
       alert("Signup successful");
+
+      navigate("/login");
+      
       console.log(res.data);
 
     } catch (err) {

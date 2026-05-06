@@ -1,7 +1,7 @@
-const OpenAI = require("openai");
+const { GoogleGenAI } = require("@google/genai");
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
+const ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY
 });
 
 const express = require("express");
@@ -44,22 +44,18 @@ Resume text:
 ${resume.extractedText}
 `;
 
-        const response = await openai.chat.completions.create({
-            model: "gpt-4.1-mini",
-            messages: [
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ]
-        });
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt
+       });
 
-        const aiText = response.choices[0].message.content;
+        const aiText = response.text;
 
         let parsedData;
 
         try {
-            parsedData = JSON.parse(aiText);
+            const cleaned = aiText.replace(/```json|```/g, "").trim();
+            parsedData = JSON.parse(cleaned);
         } catch (err) {
             return res.status(500).json({
                 message: "AI returned invalid JSON",
@@ -177,22 +173,20 @@ Interview data:
 ${qaText}
 `;
 
-        const response = await openai.chat.completions.create({
-            model: "gpt-4.1-mini",
-            messages: [
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ]
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt
         });
 
-        const aiText = response.choices[0].message.content;
+        const aiText = response.text;
+
+        
 
         let parsedFeedback;
 
         try {
-            parsedFeedback = JSON.parse(aiText);
+            const cleaned = aiText.replace(/```json|```/g, "").trim();
+            parsedFeedback = JSON.parse(cleaned);
         } catch (err) {
             return res.status(500).json({
                 message: "AI returned invalid JSON",
