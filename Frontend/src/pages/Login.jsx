@@ -1,63 +1,68 @@
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function Login() {
-    const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        email: "",
-        password: ""
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
     });
+  };
 
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    try {
+      await axios.post("http://localhost:5000/auth/login", formData);
 
-        try {
-            const res = await axios.post("http://localhost:5000/auth/login", formData);
-            alert(res.data);
-            navigate("/upload");
-        } catch (err) {
-            console.log(err);
-            alert("Login failed");
-        }
-    };
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userEmail", formData.email);
 
-    return (
-        <div>
-            <h2>Login</h2>
+      alert("Login successful");
+      navigate("/upload");
+    } catch (err) {
+      console.log(err);
+      alert("Login failed");
+    }
+  };
 
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="email"
-                    name="email"
-                    placeholder="Enter email"
-                    value={formData.email}
-                    onChange={handleChange}
-                />
+  return (
+  <div className="page">
+    <div className="card-box">
+      <h2 className="mb-4 text-center">Login</h2>
 
-                <br /><br />
+      <form onSubmit={handleSubmit}>
+        <input
+          className="form-control mb-3"
+          type="email"
+          name="email"
+          placeholder="Enter email"
+          onChange={handleChange}
+        />
 
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Enter password"
-                    value={formData.password}
-                    onChange={handleChange}
-                />
+        <input
+          className="form-control mb-3"
+          type="password"
+          name="password"
+          placeholder="Enter password"
+          onChange={handleChange}
+        />
 
-                <br /><br />
-
-                <button type="submit">Login</button>
-            </form>
-        </div>
-    );
+        <button className="btn btn-primary w-100" type="submit">
+          Login
+        </button>
+      </form>
+    </div>
+  </div>
+);
 }
 
 export default Login;

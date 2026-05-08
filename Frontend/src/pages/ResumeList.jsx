@@ -1,63 +1,68 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import axios from "axios";
 
 function ResumeList() {
-    const [resumes, setResumes] = useState([]);
-    const navigate = useNavigate();
+  const [resumes, setResumes] = useState([]);
+  const navigate = useNavigate();
 
-    const getResumes = async () => {
-        try {
-            const res = await axios.get("http://localhost:5000/resume/all");
-            setResumes(res.data.filter((resume) => resume.extractedText));
-        } catch (err) {
-            console.log(err);
-            alert("Failed to fetch resumes");
-        }
+  useEffect(() => {
+    const fetchResumes = async () => {
+      try {
+        const email = localStorage.getItem("userEmail");
+        const res = await axios.get(`http://localhost:5000/resume/user/${email}`);
+        setResumes(res.data);
+      } catch (err) {
+        console.log(err);
+        alert("Error fetching resumes");
+      }
     };
 
-    const startInterview = async (resumeId) => {
-        try {
-            const res = await axios.post(
-                `http://localhost:5000/interview/questions/${resumeId}`
-            );
+    fetchResumes();
+  }, []);
 
-            
-            alert("Interview started successfully");
-            navigate(`/interview/${res.data._id}`);
-        } catch (err) {
-            console.log(err);
-            alert("Error starting interview");
-        }
-    };
+  const startInterview = async (resumeId) => {
+    try {
+      const res = await axios.post(
+        `http://localhost:5000/interview/questions/${resumeId}`
+      );
 
-    useEffect(() => {
-        getResumes();
-    }, []);
+      alert("Interview started successfully");
+      navigate(`/interview/${res.data._id}`);
+    } catch (err) {
+      console.log(err);
+      alert("Error starting interview");
+    }
+  };
 
-    return (
-        <div>
-            <h2>Uploaded Resumes</h2>
+  return (
+  <div className="page">
+    <h2 className="mb-4 text-center">All Resumes</h2>
 
-            {resumes.length === 0 ? (
-                <p>No resumes uploaded yet</p>
-            ) : (
-                resumes.map((resume) => (
-                    <div key={resume._id}>
-                        <h4>{resume.fileName}</h4>
-                        <p>{resume.filePath}</p>
+    {resumes.length === 0 && (
+      <div className="alert alert-warning text-center">
+        No resumes uploaded yet.
+      </div>
+    )}
 
-                        <button onClick={() => startInterview(resume._id)}>
-                            Start Interview
-                        </button>
+    {resumes.map((resume) => (
+      <div className="card-box" key={resume._id}>
+        <h5>{resume.fileName}</h5>
 
-                        <hr />
-                    </div>
-                ))
-            )}
-        </div>
-    );
+        <p className="text-muted">
+          <b>Path:</b> {resume.filePath}
+        </p>
+
+        <button
+          className="btn btn-primary"
+          onClick={() => startInterview(resume._id)}
+        >
+          Start Interview
+        </button>
+      </div>
+    ))}
+  </div>
+);
 }
 
 export default ResumeList;

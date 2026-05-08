@@ -1,9 +1,10 @@
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function Signup() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -21,44 +22,53 @@ function Signup() {
     e.preventDefault();
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/auth/signup",
-        formData
-      );
+      await axios.post("http://localhost:5000/auth/signup", formData);
 
       alert("Signup successful");
-
       navigate("/login");
-      
-      console.log(res.data);
-
     } catch (err) {
-      console.log("Full error:", err);
-      console.log("Response data:", err.response?.data);
-      console.log("Status:", err.response?.status);
-      console.log("Message:", err.message);
+      console.log(err);
       alert("Signup failed");
     }
   };
 
   return (
-    <div>
-      <h2>Signup</h2>
+  <div className="page">
+    <div className="card-box">
+      <h2 className="mb-4 text-center">Signup</h2>
 
       <form onSubmit={handleSubmit}>
-        <input type="text" name="name" placeholder="Enter name" onChange={handleChange} />
-        <br /><br />
+        <input
+          className="form-control mb-3"
+          type="text"
+          name="name"
+          placeholder="Enter name"
+          onChange={handleChange}
+        />
 
-        <input type="email" name="email" placeholder="Enter email" onChange={handleChange} />
-        <br /><br />
+        <input
+          className="form-control mb-3"
+          type="email"
+          name="email"
+          placeholder="Enter email"
+          onChange={handleChange}
+        />
 
-        <input type="password" name="password" placeholder="Enter password" onChange={handleChange} />
-        <br /><br />
+        <input
+          className="form-control mb-3"
+          type="password"
+          name="password"
+          placeholder="Enter password"
+          onChange={handleChange}
+        />
 
-        <button type="submit">Signup</button>
+        <button className="btn btn-primary w-100" type="submit">
+          Signup
+        </button>
       </form>
     </div>
-  );
+  </div>
+);
 }
 
 export default Signup;

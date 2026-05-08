@@ -13,10 +13,14 @@ router.post("/upload", upload.single("resume"), async (req, res) => {
 
         const data = await pdfParse(fileBuffer);
 
+        const userEmail = req.body.userEmail;
+
         const resume = new Resume({
             fileName: req.file.originalname,
             filePath: req.file.path,
-            extractedText: data.text
+            extractedText: data.text,
+            userEmail: userEmail
+
         });
         await resume.save();
          res.send("Resume uploaded, text extracted, and saved successfully");
@@ -36,6 +40,16 @@ router.get("/all", async (req, res) => {
     }
 });
 
+router.get("/user/:email", async (req, res) => {
+    try {
+        const resumes = await Resume.find({ userEmail: req.params.email });
+        res.json(resumes);
+    } catch (err) {
+        console.log(err);
+        res.send("Error fetching user resumes");
+    }
+});
+
 router.get("/:id", async (req, res) => {
     try {
         const resume = await Resume.findById(req.params.id);
@@ -50,5 +64,6 @@ router.get("/:id", async (req, res) => {
         res.send("Error fetching resume");
     }
 });
+
 
 module.exports = router;

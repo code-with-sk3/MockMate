@@ -1,57 +1,56 @@
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 function UploadResume() {
-    const navigate = useNavigate();
-    const [resume, setResume] = useState(null);
+  const navigate = useNavigate();
+  const [file, setFile] = useState(null);
 
-    const handleFileChange = (e) => {
-        setResume(e.target.files[0]);
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    if (!file) {
+      alert("Please select resume");
+      return;
+    }
 
-        if (!resume) {
-            alert("Please select a resume");
-            return;
-        }
+    const formData = new FormData();
+    formData.append("resume", file);
+    formData.append("userEmail", localStorage.getItem("userEmail"));
 
-        const formData = new FormData();
-        formData.append("resume", resume);
+    try {
+      console.log("User email:", localStorage.getItem("userEmail"));
 
-        try {
-            const res = await axios.post(
-                "http://localhost:5000/resume/upload",
-                formData
-            );
+      await axios.post("http://localhost:5000/resume/upload", formData);
 
-            alert(res.data);
-            navigate("/resumes");
-        } catch (err) {
-            console.log(err);
-            alert("Resume upload failed");
-        }
-    };
+      alert("Resume uploaded successfully");
+      navigate("/resumes");
+    } catch (err) {
+      console.log(err);
+      alert("Resume upload failed");
+    }
+  };
 
-    return (
-        <div>
-            <h2>Upload Resume</h2>
+  return (
+  <div className="page">
+    <div className="card-box">
+      <h2 className="mb-4 text-center">Upload Resume</h2>
 
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                />
+      <form onSubmit={handleSubmit}>
+        <input
+          className="form-control mb-3"
+          type="file"
+          accept="application/pdf"
+          onChange={(e) => setFile(e.target.files[0])}
+        />
 
-                <br /><br />
-
-                <button type="submit">Upload Resume</button>
-            </form>
-        </div>
-    );
+        <button className="btn btn-success w-100" type="submit">
+          Upload Resume
+        </button>
+      </form>
+    </div>
+  </div>
+);
 }
 
 export default UploadResume;
